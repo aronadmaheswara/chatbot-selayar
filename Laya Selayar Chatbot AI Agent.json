@@ -1,0 +1,650 @@
+{
+  "name": "Chatbot Selayar",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.pesan }}",
+        "options": {
+          "systemMessage": "=##Ringkasan\nKamu adalah Laya, Assistant Virtual Badan Pusat Statistik Kabupaten Kepulauan Selayar. Tugas Anda adalah membantu pengguna mencari data yang dibutuhkan pada database. Anda juga harus membantu user jika mereka bertanya tentang profil BPS\n\n### Greetings\nHi {{ $json.body.name }}, Saya Laya, Assisten Virtual BPS Kabupaten Kepulauan Selayar. Saya dapat membantu Anda mencari data yang Anda butuhkan. Sebutkan data secara lengkap untuk memudahkan saya mencari data yang cocok untuk Anda.\n\nAda yang bisa Laya bantu?\n\n##Tools\nSumber data - gunakan ini untuk mencari setiap data sesuai permintaan pengguna\nThink - gunakan ini jika kamu memerlukan bantuan dalam mengambil keputusan\nProfil BPS - gunakan ini untuk mencari informasi lainnya mengenai BPS\n\n#Petunjuk\n- Jika pengguna menanyakan “Apakah ada data itu” atau “data mengenai ini ada atau tidak” mereka ingin melihat database apakah data tersebut tersedia.\n\n- Jika mereka menanyakan hal lain tentang Badan Pusat Statistik (BPS), seperti \"dimana lokasi bps\", \"apa instagram bps\", \"apa layanan bps\", jawab pertanyaan tersebut dengan hati-hati sesuai dengan Tools (Profil BPS) yang kamu miliki.\n\n- Pastikan cek kembali apakah hasil sudah sesuai\n\n#Keluaran\n“Data”:[\n{\n“Judul”:”Jumlah Penduduk”,\n“Tahun”:”2020-2024”,\n“Link”:\n}\n]\n}\n\n#Penutup\nJika sudah tidak ada yang perlu dibantu silakan kirim pesan berikut:\n\"Terima kasih telah mengggunakan layanan Virtual Assistant BPS Kabupaten Kepulauan Selayar.\nMohon mengisi link survei berikut untuk survei SKD\" "
+        }
+      },
+      "id": "915b0c11-55c7-4227-b8e3-516c148bd9a4",
+      "name": "Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        560,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-1.5-flash-latest",
+        "options": {
+          "temperature": 0.1,
+          "topP": 1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        340,
+        180
+      ],
+      "id": "ce682c38-1fa4-4ca4-bcbb-753901f6d6da",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "6cLf7IMiZDOzhKAW",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.sessionId }} {{ $json.body.pesan }}",
+        "contextWindowLength": 6
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        480,
+        200
+      ],
+      "id": "ea8a66b0-261b-4178-ba5b-e611b21c95a0",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "description": "Pastikan semua data yang diminta pengguna sesuai. Cek penulisan jika penggunaan kapital nya berbeda. tanyakan kepada user jika mereka lupa memberikan request secara detail.\n\nJika penggunaan kata tidak sesuai dengan judul atau pengguna hanya memasukan satu kata maka cari kata yang bersesuaian di sumber data\n\nJika pengguna menanyakan hal tentang BPS silakan jawab sesuai dengan tools yang kamu miliki"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "typeVersion": 1,
+      "position": [
+        860,
+        220
+      ],
+      "id": "fb724aa5-d46d-4b92-bbc5-96ba4f4fbb4d",
+      "name": "Think"
+    },
+    {
+      "parameters": {
+        "public": true,
+        "initialMessages": "Hai saya Laya, Assistant Virtual BPS Kabupaten Kepulauan Selayar. Saya bisa membantu Anda mencari data yang Anda butuhkan. Apakah ada yang bisa saya bantu?",
+        "options": {
+          "allowFileUploads": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        240
+      ],
+      "id": "0584ec13-c11a-4b5a-9a18-7fc225dfc70d",
+      "name": "When chat message received",
+      "webhookId": "11a5d1f0-c3b6-4881-85cd-970d88029a4c"
+    },
+    {
+      "parameters": {
+        "options": {
+          "gl": "indonesia",
+          "hl": "indonesia"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolSerpApi",
+      "typeVersion": 1,
+      "position": [
+        980,
+        220
+      ],
+      "id": "5e21cebc-aa2b-426d-be23-fb1668fbf6c0",
+      "name": "SerpAPI",
+      "credentials": {
+        "serpApi": {
+          "id": "GFme13fOJxxrOfYL",
+          "name": "SerpAPI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "=Read on Google Sheets based on user request  {{ $json.chatInput }}",
+        "documentId": {
+          "__rl": true,
+          "value": "1JgdsBpkYxzSkogywY51Zxkwho_5hfYJ88-UHo5tgBIU",
+          "mode": "list",
+          "cachedResultName": "Database Bot Laya",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1JgdsBpkYxzSkogywY51Zxkwho_5hfYJ88-UHo5tgBIU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Permintaan Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1JgdsBpkYxzSkogywY51Zxkwho_5hfYJ88-UHo5tgBIU/edit#gid=0"
+        },
+        "combineFilters": "OR",
+        "options": {
+          "dataLocationOnSheet": {
+            "values": {
+              "rangeDefinition": "detectAutomatically"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.5,
+      "position": [
+        620,
+        220
+      ],
+      "id": "d2ff7a27-d037-4b07-8924-1186dd567407",
+      "name": "sumber data",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "o3WEHtq8wNAKq8rs",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "=Read data on Google Sheets base on the question {{ $json.chatInput }}",
+        "documentId": {
+          "__rl": true,
+          "value": "1JgdsBpkYxzSkogywY51Zxkwho_5hfYJ88-UHo5tgBIU",
+          "mode": "list",
+          "cachedResultName": "Database Bot Laya",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1JgdsBpkYxzSkogywY51Zxkwho_5hfYJ88-UHo5tgBIU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1607741726,
+          "mode": "list",
+          "cachedResultName": "Profil BPS",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1JgdsBpkYxzSkogywY51Zxkwho_5hfYJ88-UHo5tgBIU/edit#gid=1607741726"
+        },
+        "combineFilters": "OR",
+        "options": {
+          "dataLocationOnSheet": {
+            "values": {
+              "rangeDefinition": "detectAutomatically"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.5,
+      "position": [
+        740,
+        220
+      ],
+      "id": "152f918f-5153-445b-8ebc-21862fe8e934",
+      "name": "Profil BPS",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "o3WEHtq8wNAKq8rs",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "6a9813a8-cb79-4b80-90f8-5ed8f23489fa",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        40
+      ],
+      "id": "1406d32d-03b3-4765-8724-16328b3c07f7",
+      "name": "Webhook",
+      "webhookId": "6a9813a8-cb79-4b80-90f8-5ed8f23489fa"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.fonnte.com/send",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "fgvNmnSr2BQWypTW56F5"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "Message",
+              "value": "={{ $json.output }}"
+            },
+            {
+              "name": "Target",
+              "value": "={{ $('Webhook').item.json.body.sender }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1200,
+        0
+      ],
+      "id": "f8e28163-c261-4d70-8009-69866b83779a",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "1EvLJZmrFQiecfK12LHsPP43El-YfgkAU",
+          "mode": "list",
+          "cachedResultName": "Knowledge Based AI Chatbot",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1EvLJZmrFQiecfK12LHsPP43El-YfgkAU"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        80,
+        -280
+      ],
+      "id": "2406f410-ee3c-4e01-b5e1-f3df204abaed",
+      "name": "Google Drive Trigger",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "sdWa5M4HG5PEwiTE",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4eace691-817f-49a3-a8ec-6863e0994df4",
+              "name": "Judul",
+              "value": "={{ $json.judul }}",
+              "type": "string"
+            },
+            {
+              "id": "3da2dca5-ed9f-47df-9984-e7e663b14c63",
+              "name": "Tahun",
+              "value": "={{ $json.tahun }}",
+              "type": "string"
+            },
+            {
+              "id": "6b76c4ef-cd2c-482f-8477-9818be0670af",
+              "name": "Link",
+              "value": "={{ $json.link }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {
+          "dotNotation": true
+        }
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        760,
+        -280
+      ],
+      "id": "a5fb6cc5-e8eb-4966-ba5a-f340ac4d44f5",
+      "name": "edit_link"
+    },
+    {
+      "parameters": {
+        "content": "## Whatsapp\n",
+        "height": 240,
+        "width": 360,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -80,
+        -60
+      ],
+      "typeVersion": 1,
+      "id": "1fed4708-88a7-4ec1-890a-c805ccd422cf",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## AI Chat Bot\nBerisi AI Model dengan knowledge base dari google sheet",
+        "height": 460,
+        "width": 820
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        280,
+        -60
+      ],
+      "typeVersion": 1,
+      "id": "5c58bc5e-0ecc-42d8-93fa-83ea5daea7ef",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1JgdsBpkYxzSkogywY51Zxkwho_5hfYJ88-UHo5tgBIU",
+          "mode": "list",
+          "cachedResultName": "Database Bot Laya",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1JgdsBpkYxzSkogywY51Zxkwho_5hfYJ88-UHo5tgBIU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Permintaan Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1JgdsBpkYxzSkogywY51Zxkwho_5hfYJ88-UHo5tgBIU/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Link": "={{ $json.Link }}",
+            "Tahun": "={{ $json.Tahun }}",
+            "Judul": "={{ $json.Judul }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Judul",
+              "displayName": "Judul",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Tahun",
+              "displayName": "Tahun",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Link",
+              "displayName": "Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1100,
+        -280
+      ],
+      "id": "0732cc18-6d8b-43c8-b145-586b10c71db3",
+      "name": "Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "o3WEHtq8wNAKq8rs",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Input File Gdrive \n**klik link berikut** [Link Drive](https://drive.google.com/drive/folders/1EvLJZmrFQiecfK12LHsPP43El-YfgkAU)\nPastikan nama file sesuai format (Judul file_tahun)\n\n_Contoh: Jumlah Penduduk Kabupaten Kepulauan Selayar Tahun_2024.xlsx_",
+        "height": 340,
+        "width": 400
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        -460
+      ],
+      "typeVersion": 1,
+      "id": "339f1313-9d74-4958-b641-3b56ca3b0086",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## Baca Informasi Dokumen\nPada bagian ini, automation akan otomatis mengambil informasi yang diupload di Gdrive (Judul, Tahun, Link)\n\nPastikan nama file di Gdrive sudah sesuai format, Judul_Tahun\nMisalnya **Jumlah Penduduk Kabupaten Kepulauan Selayar Tahun_2024.xlsx**",
+        "height": 340,
+        "width": 580,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        400,
+        -460
+      ],
+      "typeVersion": 1,
+      "id": "b397e787-b50b-4022-b60a-3584e68ff8a1",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "## Mencatat ke Spreadsheet\nLihat Spreadsheet [disini](https://docs.google.com/spreadsheets/d/1JgdsBpkYxzSkogywY51Zxkwho_5hfYJ88-UHo5tgBIU/edit?gid=0#gid=0)\n\n\n",
+        "height": 340,
+        "width": 340,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        980,
+        -460
+      ],
+      "typeVersion": 1,
+      "id": "b785ec2d-4274-4021-aa50-2cd09ff13bba",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "## Membalas pesan pengguna\n\n",
+        "height": 240,
+        "width": 340,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1100,
+        -60
+      ],
+      "typeVersion": 1,
+      "id": "2896af84-bee1-47c1-a032-f431d67e05d3",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const fullName = item.json.name || '';\n  const fileName = fullName.replace(/\\.[^/.]+$/, ''); // hapus .pdf, .docx, dll\n\n  // regex fleksibel: cari akhir dengan spasi, underscore, titik, atau dash + 4 digit tahun\n  const match = fileName.match(/^(.*?)[\\s._-]+(\\d{4})$/);\n\n  let judul = fileName;\n  let tahun = null;\n\n  if (match) {\n    judul = match[1].trim();\n    tahun = match[2];\n  }\n\n  return {\n    json: {\n      originalName: fullName,\n      judul,\n      tahun,\n      link: item.json.webViewLink || item.json.alternateLink || null\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        460,
+        -280
+      ],
+      "id": "ab35cf23-35cc-41fe-948a-5ee2f8d2b2f6",
+      "name": "Code"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Think": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        []
+      ]
+    },
+    "SerpAPI": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "sumber data": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Profil BPS": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "edit_link": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "edit_link",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "0270de2a-5c2d-441b-b396-92cf609458eb",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "46133c553589d84738f58da56651ae8f65fe2e9b88217eb572d9d468b1cb0f2b"
+  },
+  "id": "EseSu0F7WEdwUoix",
+  "tags": [
+    {
+      "createdAt": "2025-06-20T02:13:19.673Z",
+      "updatedAt": "2025-06-20T02:13:19.673Z",
+      "id": "Oiwboc10Dj1tO9vh",
+      "name": "ChatBot Laya"
+    }
+  ]
+}
